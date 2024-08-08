@@ -1,4 +1,7 @@
 import http from 'node:http'
+import { randomUUID } from 'node:crypto';
+import { json } from './middlewares/json.js'
+import { Database } from './middlewares/database.js';
 
 // Aplicações => HTTP
 // CommonJS =>
@@ -23,28 +26,29 @@ import http from 'node:http'
 
 // Cabeçalhos => Metadados
 // HTTP Status Code
-const users = []
+const database = new Database()
 
-const server = http.createServer((req,res)=>{
+const server = http.createServer(async (req,res)=>{
   const {method, url} = req
 
-  console.log(req.headers)
-
-  console.log(method, url)
+  await json(req, res)
 
   if(method === 'GET' && url === '/users'){
-    return res
-    .setHeader('Content-type', 'application/json')
-    .end(JSON.stringify(users))
+    const users = database.select('users')
+
+    return res.end(JSON.stringify(users))
   }
 
   if(method === 'POST' && url === '/users'){
+    const {name,email} = req.body
+    const id = randomUUID()
+    const user = {
+      id: id,
+      name: name,
+      email: email
+    }
 
-    users.push({
-      id: 1,
-      name: 'Luan',
-      email: 'luan@example.com'
-    })
+    database.insert('users', user)
 
     return res
             .writeHead(201)
